@@ -5,11 +5,9 @@ import { dbService } from '../../services/db.service.js'
 import { logger } from '../../services/logger.service.js'
 import { utilService } from '../../services/util.service.js'
 
-async function query(filterBy={txt:''}) {
+async function query(filterBy) {
     try {
-        const criteria = {
-            name: { $regex: filterBy.txt, $options: 'i' }
-        }
+        const criteria = _buildCriteria(filterBy)
         const collection = await dbService.getCollection('toy')
         var toys = await collection.find(criteria).toArray()
         return toys
@@ -81,12 +79,43 @@ async function addToyMsg(toyId, msg) {
 async function removeToyMsg(toyId, msgId) {
     try {
         const collection = await dbService.getCollection('toy')
-        await collection.updateOne({ _id: ObjectId(toyId) }, { $pull: { msgs: {id: msgId} } })
+        await collection.updateOne({ _id: ObjectId(toyId) }, { $pull: { msgs: { id: msgId } } })
         return msgId
     } catch (err) {
         logger.error(`cannot add toy msg ${toyId}`, err)
         throw err
     }
+}
+
+function _buildCriteria(filterBy) {
+    console.log(filterBy);
+    const { labels, txt, status } = filterBy
+
+    const criteria = {}
+
+    if (txt) {
+        criteria.name = { $regex: txt, $options: 'i' }
+    }
+
+    if (labels && labels.length) {
+        //   every for string labels
+        const labelsCrit = labels.map((label) => ({
+            labels: label,
+        }))
+        criteria.$and = labelsCrit
+        criteria.labels = { $all: labels }
+
+        //   // for some for string labels
+        //   console.log('labels', labels)
+        //   criteria.labels = { $in: labels } //['Doll']
+    }
+
+    // if (status) {
+    //   criteria.inStock = status === 'true' ? true : false  // ? true : false
+    // }
+    console.log('criteria', criteria)
+
+    return criteria
 }
 
 export const toyService = {

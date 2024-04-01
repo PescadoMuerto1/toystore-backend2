@@ -5,10 +5,14 @@ export async function getToys(req, res) {
     try {
         const filterBy = {
             txt: req.query.params.filterBy.txt || '',
+            labels: req.query.params.filterBy.byLabel || null,
         }
+        console.log(filterBy);
         logger.debug('Getting Toys', filterBy)
         const toys = await toyService.query(filterBy)
+
         res.json(toys)
+
     } catch (err) {
         logger.error('Failed to get toys', err)
         res.status(500).send({ err: 'Failed to get toys' })
